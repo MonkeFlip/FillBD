@@ -115,6 +115,7 @@ def insert_genre_in_table(genre_name, dbName, psw):
             connection.close()
 
 
+
 def iterateByLines(filename, dbName, psw):
     file = open(filename, 'r')
     for line in file.readlines():
