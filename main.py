@@ -172,4 +172,4 @@ def extract_song_name(string):
 # main
 dbName = "MusonDB"
 createTableOfGenres(dbName)
-iterateByLines("C:\\Users\\Artem\\Desktop\\music metainfo.txt", dbName)
+iterateByLines("metainfo.txt", dbName)
