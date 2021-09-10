@@ -4,7 +4,7 @@ from psycopg2 import Error
 from psycopg2 import sql
 
 
-def createTableOfSongs(tableName, dbName, psw):
+def createTableOfSongs(dbName, psw):
     try:
         # Подключиться к существующей базе данных
         connection = psycopg2.connect(user="postgres",
@@ -18,9 +18,8 @@ def createTableOfSongs(tableName, dbName, psw):
 
         # Выполнение команды: это создает новую таблицу
         cursor.execute(sql.SQL(
-            "CREATE TABLE IF NOT EXISTS {} (ID INT PRIMARY KEY NOT NULL, DIRECTORY VARCHAR NOT NULL, SONG VARCHAR NOT "
-            "NULL, ARTIST VARCHAR NOT NULL)").format(
-            sql.Identifier(tableName)))
+            "CREATE TABLE IF NOT EXISTS SONGS (ID INT PRIMARY KEY NOT NULL, DIRECTORY VARCHAR NOT NULL, SONG VARCHAR "
+            "NOT NULL, ARTIST VARCHAR NOT NULL, GENRE VARCHAR NOT NULL)"))
         connection.commit()
     except (Exception, Error) as error:
         print("Ошибка при работе с PostgreSQL", error)
@@ -53,7 +52,7 @@ def createTableOfGenres(dbName, psw):
             connection.close()
 
 
-def fill_with_songs(directory_name, tableName, artistName, dbName, psw):
+def fill_with_songs(directory_name, genre_name, artistName, dbName, psw):
     try:
         # Подключиться к существующей базе данных
         connection = psycopg2.connect(user="postgres",
@@ -72,13 +71,12 @@ def fill_with_songs(directory_name, tableName, artistName, dbName, psw):
                 if song[-3:] == "mp3":
                     # Выполнение SQL-запроса для вставки данных в таблицу
                     cursor.execute(sql.SQL(
-                        "INSERT INTO {} (ID, DIRECTORY, SONG, ARTIST) VALUES (%s, %s, %s, %s) ON CONFLICT (ID) DO "
-                        "NOTHING").format(
-                        sql.Identifier(tableName)),
-                        [java_string_hashcode(artistName + extract_song_name(filename)), dirpath, filename, artistName])
+                        "INSERT INTO SONGS (ID, DIRECTORY, SONG, ARTIST, GENRE) VALUES (%s, %s, %s, %s, %s) ON CONFLICT (ID) DO "
+                        "NOTHING"),
+                        [java_string_hashcode(artistName + extract_song_name(filename)), dirpath, filename, artistName, genre_name])
                     connection.commit()
                     # Получить результат
-                    cursor.execute(sql.SQL("SELECT * from {}").format(sql.Identifier(tableName)))
+                    cursor.execute(sql.SQL("SELECT * from SONGS"))
     except (Exception, Error) as error:
         print("Ошибка при работе с PostgreSQL", error)
     finally:
@@ -119,18 +117,18 @@ def insert_genre_in_table(genre_name, dbName, psw):
 def iterateByLines(filename, dbName, psw):
     file = open(filename, 'r')
     for line in file.readlines():
-        tableName = line[1:get_genre_name(line) + 1]
-        if len(tableName) != 0:
-            insert_genre_in_table(tableName, dbName, psw)
+        genre_name = line[1:get_genre_name(line) + 1]
+        if len(genre_name) != 0:
+            insert_genre_in_table(genre_name, dbName, psw)
         line = line[get_genre_name(line) + 2:]
         artistName = line[1:get_artist_name(line) + 1]
         print(artistName)
         line = line[get_artist_name(line) + 2:]
         print(line)
-        createTableOfSongs(tableName, dbName, psw)
+        createTableOfSongs(dbName, psw)
         if line[-1] == '\n':
             line = line[0:-1]
-        fill_with_songs(line, tableName, artistName, dbName, psw)
+        fill_with_songs(line, genre_name, artistName, dbName, psw)
     file.close()
 
 
